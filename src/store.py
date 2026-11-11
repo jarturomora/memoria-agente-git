@@ -1,10 +1,12 @@
 """Cliente de Elasticsearch y creación de índices de demostración."""
+from elasticsearch import Elasticsearch
 from src.config import ES_URL, BOOK_INDEX, MEMORY_INDEX
 
 BOOK_MAPPING = {
     "mappings": {"properties": {
-        "title": {"type": "text"}, "section": {"type": "text"},
-        "content": {"type": "text", "analyzer": "english"},
+        "title": {"type": "text", "analyzer": "spanish"},
+        "section": {"type": "text", "analyzer": "spanish"},
+        "content": {"type": "text", "analyzer": "spanish"},
         "source": {"type": "keyword"}, "chapter": {"type": "keyword"},
         "chunk": {"type": "integer"}
     }}

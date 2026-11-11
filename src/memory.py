@@ -3,6 +3,20 @@ from datetime import datetime, timezone
 from uuid import uuid4
 from src.config import MEMORY_INDEX
 
+
+def reset_memories(es):
+    """Elimina todos los recuerdos sin borrar ni recrear su índice."""
+    if not es.indices.exists(index=MEMORY_INDEX):
+        return 0
+    result = es.delete_by_query(
+        index=MEMORY_INDEX,
+        query={"match_all": {}},
+        wait_for_completion=True,
+        refresh=True,
+    )
+    return result.get("deleted", 0)
+
+
 def save_memory(es, user_id, text):
     if not user_id or not user_id.strip() or not text or not text.strip():
         raise ValueError("El usuario y el recuerdo no pueden estar vacíos.")

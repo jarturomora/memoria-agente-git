@@ -1,5 +1,53 @@
 from unittest.mock import MagicMock
-from src.memory import delete_memory, retrieve_memories, save_memory
+from src.config import BOOK_INDEX, MEMORY_INDEX
+from src.memory import delete_memory, reset_memories, retrieve_memories, save_memory
+
+
+def test_reset_memories_deletes_only_memory_documents():
+    es = MagicMock()
+    es.indices.exists.return_value = True
+    es.delete_by_query.return_value = {"deleted": 3}
+
+    assert reset_memories(es) == 3
+    es.delete_by_query.assert_called_once_with(
+        index=MEMORY_INDEX,
+        query={"match_all": {}},
+        wait_for_completion=True,
+        refresh=True,
+    )
+    es.indices.delete.assert_not_called()
+    es.indices.create.assert_not_called()
+
+
+def test_reset_memories_keeps_mapping_and_book_index_untouched():
+    es = MagicMock()
+    es.indices.exists.return_value = True
+    es.delete_by_query.return_value = {"deleted": 1}
+
+    reset_memories(es)
+
+    assert MEMORY_INDEX != BOOK_INDEX
+    assert es.delete_by_query.call_args.kwargs["index"] == MEMORY_INDEX
+    es.indices.put_mapping.assert_not_called()
+    es.indices.delete.assert_not_called()
+    es.indices.create.assert_not_called()
+
+
+def test_reset_memories_is_idempotent_when_index_is_empty():
+    es = MagicMock()
+    es.indices.exists.return_value = True
+    es.delete_by_query.return_value = {"deleted": 0}
+
+    assert reset_memories(es) == 0
+    assert reset_memories(es) == 0
+
+
+def test_reset_memories_handles_missing_index():
+    es = MagicMock()
+    es.indices.exists.return_value = False
+
+    assert reset_memories(es) == 0
+    es.delete_by_query.assert_not_called()
 
 def test_save_memory_writes_user_scoped_doc():
     es = MagicMock()

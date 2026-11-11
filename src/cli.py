@@ -3,7 +3,7 @@ import argparse
 from src.store import client, ensure_indices
 from src.config import BOOK_INDEX, MEMORY_INDEX
 from src.search import search_book
-from src.memory import save_memory, list_memories, delete_memory
+from src.memory import delete_memory, list_memories, reset_memories, save_memory
 from src.agent import answer
 
 
@@ -18,17 +18,37 @@ def main(argv=None):
     ls = sub.add_parser("memories", help="Muestra los recuerdos")
     delete = sub.add_parser("forget", help="Elimina un recuerdo propio")
     delete.add_argument("memory_id")
+    reset = sub.add_parser(
+        "reset-memory",
+        help="Elimina todos los recuerdos sin modificar el índice de Pro Git",
+    )
+    reset.add_argument(
+        "--confirm",
+        action="store_true",
+        help="Confirma el borrado sin solicitar entrada interactiva",
+    )
     a = sub.add_parser("ask", help="Muestra contexto; --llm genera respuesta")
     a.add_argument("question")
     a.add_argument("--llm", action="store_true")
     for cmd in [r, ls, delete, a]:
         cmd.add_argument("--user", default="alumno-01")
     args = p.parse_args(argv)
+    if args.command == "reset-memory" and not args.confirm:
+        confirmation = input(
+            "Esta operación eliminará todos los recuerdos. "
+            "Escribe BORRAR para confirmar: "
+        )
+        if confirmation != "BORRAR":
+            print("Operación cancelada; no se ha eliminado ningún recuerdo.")
+            return
     es = client()
     try:
         if not es.ping():
             p.error("Elasticsearch no responde. Inicia Docker y revisa http://localhost:9200")
-        ensure_indices(es)
+        # reset-memory no crea, elimina ni modifica ningún índice: solo borra
+        # documentos del índice de memoria si este ya existe.
+        if args.command != "reset-memory":
+            ensure_indices(es)
         if args.command == "status":
             print("Elasticsearch OK:", es.info()["version"]["number"])
             for index in [BOOK_INDEX, MEMORY_INDEX]:
@@ -45,6 +65,9 @@ def main(argv=None):
         elif args.command == "forget":
             print("Recuerdo eliminado." if delete_memory(es, args.user, args.memory_id)
                   else "No existe o pertenece a otro usuario.")
+        elif args.command == "reset-memory":
+            deleted = reset_memories(es)
+            print(f"Recuerdos eliminados: {deleted}")
         elif args.command == "ask":
             passages, memories, output = answer(es, args.user, args.question, args.llm)
             print("\n=== CONOCIMIENTO RECUPERADO ===")

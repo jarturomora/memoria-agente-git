@@ -25,17 +25,17 @@ python -m src.cli status
 En directo:
 
 ```bash
-python -m src.cli search "git branch merge"
-python -m src.cli ask "What is the difference between reset and revert?"
+python -m src.cli search "crear y fusionar ramas"
+python -m src.cli ask "¿Cuál es la diferencia entre reset y revert?"
 python -m src.cli remember "Utilizo Windows y prefiero explicaciones paso a paso con PowerShell"
 python -m src.cli memories
 # Cerrar la terminal; abrir otra y activar el mismo entorno virtual
-python -m src.cli ask "How do I create a new Git branch?"
+python -m src.cli ask "¿Cómo creo una nueva rama de Git?"
 # Si hay clave de API y conexión:
-python -m src.cli ask "How do I create a new Git branch?" --llm
+python -m src.cli ask "¿Cómo creo una nueva rama de Git?" --llm
 ```
 
-**Importante:** Las búsquedas textuales del libro funcionan mejor si las preguntas incluyen términos en inglés, ya que el corpus original está en inglés. Para dudas en español, la generación puede responder en español usando los pasajes en inglés; las consultas BM25 siguen dependiendo de coincidencias léxicas. Si quieres probar consulta en español con mayor calidad, añade posteriormente traducción de consultas o búsqueda semántica.
+**Importante:** El corpus y su analizador lingüístico están en español, por lo que las consultas de la demostración deben formularse en español. Los comandos de Git (`branch`, `switch`, `reset`, etc.) se conservan tal como aparecen en el libro y también son términos de búsqueda útiles.
 
 ## Respaldo si falla Internet o el LLM
 

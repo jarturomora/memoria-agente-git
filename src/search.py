@@ -1,4 +1,4 @@
-"""Recuperación léxica de fragmentos de Pro Git (BM25)."""
+"""Recuperación léxica en español de fragmentos de Pro Git (BM25)."""
 from src.config import BOOK_INDEX
 
 def search_book(es, question, size=3):

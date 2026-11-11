@@ -12,7 +12,7 @@ GET /progit/_search
   "size": 3,
   "query": {
     "multi_match": {
-      "query": "git branch merge",
+      "query": "crear y fusionar ramas",
       "fields": ["title^3", "section^2", "content"]
     }
   },
