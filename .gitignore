@@ -1,0 +1,9 @@
+# Secrets and runtime files
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+data/progit2/
+data/*.jsonl
+.DS_Store
