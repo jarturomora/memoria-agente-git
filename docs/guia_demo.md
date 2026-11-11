@@ -1,14 +1,23 @@
 # Guía paso a paso para ejecutar la demo en clase
 
-Ejecuta todos los comandos desde la raíz del proyecto:
+Ejecuta todos los comandos desde la raíz del proyecto. En Git Bash, sustituye la ruta del ejemplo por la carpeta donde hayas clonado o descomprimido el repositorio:
 
 ```bash
-cd /c/Users/jartu/Code/elastic/memoria-agente-git
+cd /ruta/al/proyecto/memoria-agente-git
 ```
 
 ## 1. Preparar el entorno
 
-En Git Bash, activa el entorno virtual:
+La primera vez que uses el proyecto, crea la configuración local y el entorno virtual:
+
+```bash
+cp .env.example .env
+py -3 -m venv .venv
+source .venv/Scripts/activate
+python -m pip install -r requirements.txt
+```
+
+En sesiones posteriores solo necesitas volver a activarlo:
 
 ```bash
 source .venv/Scripts/activate
@@ -20,12 +29,10 @@ Comprueba el intérprete:
 python --version
 ```
 
-Debe mostrar Python 3.12.
-
-Si es la primera ejecución en ese ordenador, crea `.env`:
+Debe mostrar Python 3.10 o superior. Comprueba también que las dependencias sean coherentes:
 
 ```bash
-cp .env.example .env
+python -m pip check
 ```
 
 ## 2. Iniciar Elasticsearch y Kibana
@@ -42,9 +49,43 @@ docker compose --env-file .env -f docker/compose.yaml ps
 
 Espera unos segundos si Elasticsearch todavía está arrancando.
 
-## 3. Explorar el libro con ES|QL en Discover
+## 3. Comprobar el estado y cargar el libro
 
-Abre Discover en el navegador:
+```bash
+python -m src.cli status
+```
+
+En una instalación nueva es normal que `progit` tenga cero documentos. En ese caso, carga la edición española:
+
+```bash
+python -m scripts.load_book
+```
+
+Si el índice todavía contiene la antigua edición inglesa, regénéralo con el mapping español:
+
+```bash
+python -m scripts.load_book --recreate --confirm
+```
+
+Después, comprueba de nuevo el estado:
+
+```bash
+python -m src.cli status
+```
+
+Resultado esperado para una demo limpia:
+
+```text
+Elasticsearch OK: 9.5.6
+  progit: 112 documentos
+  agent-memories: 0 documentos
+```
+
+El número de documentos de `progit` puede variar si se ha cargado otra versión del libro.
+
+## 4. Explorar el libro con ES|QL en Discover
+
+Ahora que el libro está cargado, abre Discover en el navegador:
 
 <http://localhost:5601/app/discover>
 
@@ -96,36 +137,6 @@ FROM progit METADATA _score
 
 El operador `:` realiza una búsqueda de texto completo sobre el campo analizado `content`. La columna `_score` permite ordenar los fragmentos por relevancia.
 
-Si una consulta indica que `progit` no existe o no contiene filas, continúa con el paso siguiente y ejecuta la carga del libro.
-
-## 4. Comprobar el estado del laboratorio
-
-```bash
-python -m src.cli status
-```
-
-Resultado esperado:
-
-```text
-Elasticsearch OK: 9.5.6
-  progit: 112 documentos
-  agent-memories: 0 documentos
-```
-
-El número de documentos de `progit` puede variar si se ha cargado otra versión del libro.
-
-Si `progit` está vacío, carga el contenido:
-
-```bash
-python -m scripts.load_book
-```
-
-Después, repite:
-
-```bash
-python -m src.cli status
-```
-
 ## 5. Demostrar la recuperación documental
 
 Busca información en *Pro Git*:
@@ -174,7 +185,7 @@ Punto didáctico: el conocimiento documental y la memoria del usuario son fuente
 ## 7. Guardar un recuerdo explícito
 
 ```bash
-python -m src.cli remember "Estoy aprendiendo Git y prefiero ejemplos paso a paso con GitBash" --user alumno-01
+python -m src.cli remember "Estoy aprendiendo Git y prefiero ejemplos paso a paso con Git Bash" --user alumno-01
 ```
 
 La CLI devolverá el identificador del recuerdo:
@@ -200,7 +211,7 @@ python -m src.cli memories --user alumno-01
 Debe aparecer el recuerdo guardado:
 
 ```text
-<identificador> | Estoy aprendiendo Git y prefiero ejemplos paso a paso con GitBash
+<identificador> | Estoy aprendiendo Git y prefiero ejemplos paso a paso con Git Bash
 ```
 
 Comprueba también los contadores:
@@ -213,7 +224,7 @@ Resultado aproximado:
 
 ```text
 progit: 112 documentos
-agent-memories: 1 documentos
+agent-memories: 1 documento
 ```
 
 ## 9. Repetir la pregunta con memoria
@@ -226,7 +237,7 @@ Ahora la sección de memoria debe contener la preferencia:
 
 ```text
 === MEMORIA RECUPERADA ===
-- Estoy aprendiendo Git y prefiero ejemplos paso a paso con GitBash
+- Estoy aprendiendo Git y prefiero ejemplos paso a paso con Git Bash
 ```
 
 Explica que, en modo local, la aplicación enseña el contexto que recibiría el modelo, pero no genera una respuesta natural.
@@ -243,7 +254,7 @@ La respuesta debería:
 
 - Utilizar *Pro Git* como fuente factual.
 - Incluir referencias a los fragmentos recuperados.
-- Adaptar el estilo a la preferencia por GitBash.
+- Adaptar el estilo a la preferencia por Git Bash.
 - Tratar los recuerdos como preferencias, no como hechos técnicos.
 
 Este paso puede implicar coste y envía la pregunta y parte del contexto al proveedor del modelo.
@@ -253,7 +264,7 @@ Este paso puede implicar coste y envía la pregunta y parte del contexto al prov
 Cierra Git Bash, abre otra terminal y vuelve al proyecto:
 
 ```bash
-cd /c/Users/jartu/Code/elastic/memoria-agente-git
+cd /ruta/al/proyecto/memoria-agente-git
 source .venv/Scripts/activate
 ```
 

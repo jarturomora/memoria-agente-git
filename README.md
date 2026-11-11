@@ -17,6 +17,18 @@ Al terminar el laboratorio podrás:
 
 ## El modelo mental del laboratorio
 
+Un LLM no recuerda automáticamente lo ocurrido en ejecuciones anteriores. Solo puede utilizar la información que la aplicación incluye en la petición actual. Por eso, en este laboratorio, Python construye el contexto de cada consulta recuperando datos externos desde Elasticsearch.
+
+El proyecto separa esos datos persistentes en dos categorías con responsabilidades diferentes:
+
+- **Conocimiento documental**: información técnica procedente de *Pro Git*. Se utiliza como fuente factual para responder preguntas sobre Git.
+- **Memoria del usuario**: preferencias o datos que el usuario decide guardar explícitamente. Se utiliza para personalizar la respuesta, no para establecer hechos técnicos.
+
+La pregunta actual, el conocimiento recuperado y los recuerdos relevantes se combinan temporalmente para formar el contexto del agente. Esta combinación no modifica los parámetros del modelo ni equivale a reentrenarlo: Elasticsearch actúa como almacenamiento externo y recuperable.
+
+En la siguiente tabla se resume dónde vive cada tipo de información y durante cuánto tiempo permanece disponible.
+La comparación ayuda a distinguir los datos temporales de aquellos que Elasticsearch conserva para futuras sesiones.
+
 | Elemento | Dónde vive | Ejemplo | Duración |
 |---|---|---|---|
 | Pregunta actual | Proceso Python | «¿Cómo creo una rama?» | Una ejecución |
@@ -25,17 +37,41 @@ Al terminar el laboratorio podrás:
 
 El flujo de una consulta es:
 
-```text
-Pregunta del usuario
-        |
-        +--> búsqueda en progit ---------> conocimiento recuperado
-        |
-        +--> búsqueda en agent-memories -> preferencias recuperadas
-                                              |
-                                              v
-                              contexto visible para el LLM
-                                              |
-                                  respuesta opcional con --llm
+```mermaid
+flowchart LR
+    question["👤 Pregunta<br/>del usuario"]
+
+    subgraph retrieval["🔎 Recuperación en Elasticsearch"]
+        direction TB
+        bookSearch["📚 Buscar en<br/><b>progit</b>"]
+        memorySearch["🧠 Buscar en<br/><b>agent-memories</b>"]
+        knowledge["📖 Conocimiento<br/>documental"]
+        preferences["💡 Preferencias<br/>del usuario"]
+
+        bookSearch --> knowledge
+        memorySearch --> preferences
+    end
+
+    question --> bookSearch
+    question --> memorySearch
+    knowledge --> context["🧩 Construir<br/>el contexto"]
+    preferences --> context
+
+    context --> useLlm{"🤖 ¿Usar<br/><code>--llm</code>?"}
+    useLlm -- "No" --> local["🖥️ Mostrar el<br/>contexto recuperado"]
+    useLlm -- "Sí" --> response["✨ Generar una<br/>respuesta adaptada"]
+
+    classDef input fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px
+    classDef knowledge fill:#dcfce7,stroke:#16a34a,color:#111827,stroke-width:2px
+    classDef memory fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px
+    classDef process fill:#ede9fe,stroke:#7c3aed,color:#111827,stroke-width:2px
+    classDef output fill:#fce7f3,stroke:#db2777,color:#111827,stroke-width:2px
+
+    class question input
+    class bookSearch,knowledge knowledge
+    class memorySearch,preferences memory
+    class context,useLlm process
+    class local,response output
 ```
 
 La recuperación documental y la memoria se mantienen separadas deliberadamente. Una preferencia del usuario no se trata como una fuente técnica sobre Git.
@@ -44,6 +80,7 @@ La recuperación documental y la memoria se mantienen separadas deliberadamente.
 
 - Python 3.10 o superior.
 - Git.
+- En Windows, una terminal Git Bash o PowerShell.
 - Docker Desktop con WSL2 en Windows, o Docker Engine con Compose en Linux/macOS.
 - 6–8 GB de memoria disponible entre Docker y el sistema.
 - Acceso a Internet durante la primera instalación.
@@ -51,6 +88,12 @@ La recuperación documental y la memoria se mantienen separadas deliberadamente.
 
 > [!WARNING]
 > Elasticsearch y Kibana se ejecutan sin autenticación y solo se publican en `127.0.0.1`. Utiliza este proyecto exclusivamente como laboratorio local. No lo expongas a Internet.
+
+## Guía paso a paso
+
+A continuación se presenta un recorrido completo para preparar el entorno, cargar *Pro Git* en español y observar cómo el agente recupera conocimiento y memoria. Los pasos están ordenados para que puedas reproducir la práctica desde una instalación nueva y comprobar el resultado después de cada operación.
+
+El recorrido comienza con la configuración de Python y Docker, continúa con una consulta sin memoria y después incorpora una preferencia persistente. Finalmente, muestra cómo generar una respuesta opcional con un LLM y cómo limpiar la memoria para repetir la demostración.
 
 ## 1. Preparar Python
 
@@ -296,7 +339,7 @@ Resultado esperado:
 | `python -m src.cli search "pregunta"` | Busca fragmentos de *Pro Git* | No, salvo crear índices ausentes |
 | `python -m src.cli ask "pregunta"` | Muestra conocimiento y memoria recuperados | No, salvo crear índices ausentes |
 | `python -m src.cli remember "texto"` | Guarda una preferencia explícita | Sí, memoria |
-| `python -m src.cli memories` | Lista recuerdos del usuario | No |
+| `python -m src.cli memories` | Lista recuerdos del usuario | No, salvo crear índices ausentes |
 | `python -m src.cli forget ID` | Elimina un recuerdo concreto | Sí, memoria |
 | `python -m src.cli reset-memory` | Elimina todos los recuerdos | Sí, memoria |
 | `python -m scripts.load_book` | Indexa el libro español | Sí, conocimiento |
@@ -369,9 +412,11 @@ python -m scripts.load_book --recreate --confirm
 ## Material didáctico
 
 - [`docs/guia_demo.md`](docs/guia_demo.md): ejecución completa de la demo en clase.
-- [`docs/GUION_60_MIN.md`](docs/GUION_60_MIN.md): distribución sugerida para una conferencia de 60 minutos.
-- [`docs/RETOS_ALUMNOS.md`](docs/RETOS_ALUMNOS.md): ejercicios de ampliación.
-- [`docs/DEVTOOLS.md`](docs/DEVTOOLS.md): consultas reproducibles para Kibana Dev Tools.
+- [`docs/retos_alumnos.md`](docs/retos_alumnos.md): ejercicios de ampliación.
+
+### 🏠 Reto para casa
+
+La demostración es solo el punto de partida. Cuando termines la práctica, abre [`docs/retos_alumnos.md`](docs/retos_alumnos.md), elige al menos un reto e intenta resolverlo por tu cuenta. Añade pruebas para tu solución y documenta qué decisión tomaste: aprenderás mucho más modificando el agente que limitándote a ejecutar los comandos preparados.
 
 ## Decisiones de diseño y limitaciones
 
