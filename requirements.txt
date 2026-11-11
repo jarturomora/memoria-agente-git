@@ -1,4 +1,11 @@
+# Cliente oficial utilizado por store.py y por el cargador masivo.
 elasticsearch>=9.0,<10
+
+# Lee la configuración local desde .env sin incluir secretos en Git.
 python-dotenv>=1.0,<2
+
+# Solo se utiliza cuando el usuario añade --llm.
 openai>=2.0,<3
+
+# Framework de pruebas; no es necesario para ejecutar la demo normal.
 pytest>=8,<10

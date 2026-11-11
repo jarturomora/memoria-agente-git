@@ -2,34 +2,49 @@
 # No exponer a Internet ni utilizar en producción.
 services:
   elasticsearch:
+    # La versión procede de .env; el valor tras :- es el fallback de Compose.
     image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION:-9.5.6}
     environment:
+      # Un único nodo evita la configuración de un clúster para esta práctica.
       - discovery.type=single-node
+      # Seguridad desactivada únicamente porque los puertos se ligan a localhost.
       - xpack.security.enabled=false
       - xpack.security.http.ssl.enabled=false
+      # Heap pequeño y predecible para ordenadores de estudiantes.
       - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      # La demo no utiliza las funciones de machine learning de Elasticsearch.
       - xpack.ml.enabled=false
     ports:
+      # 127.0.0.1 impide publicar Elasticsearch en toda la red del equipo.
       - "127.0.0.1:9200:9200"
     volumes:
+      # El volumen conserva índices aunque se detengan los contenedores.
       - esdata:/usr/share/elasticsearch/data
     healthcheck:
+      # Kibana y el profesor pueden saber cuándo Elasticsearch está listo.
       test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health >/dev/null"]
       interval: 10s
       timeout: 5s
       retries: 30
+    # Límite del contenedor; no es el tamaño del heap configurado arriba.
     mem_limit: 3g
+
   kibana:
     image: docker.elastic.co/kibana/kibana:${ELASTIC_VERSION:-9.5.6}
     environment:
+      # Dentro de la red de Compose se usa el nombre del servicio, no localhost.
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
       XPACK_SECURITY_ENABLED: "false"
       TELEMETRY_ENABLED: "false"
     ports:
       - "127.0.0.1:5601:5601"
     depends_on:
+      # Kibana arranca cuando el healthcheck anterior ya es satisfactorio.
       elasticsearch:
         condition: service_healthy
     mem_limit: 1g
+
+# Volumen nombrado administrado por Docker. ``down`` lo conserva; ``down -v``
+# lo elimina junto con todos los índices del laboratorio.
 volumes:
   esdata:

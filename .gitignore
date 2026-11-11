@@ -4,7 +4,8 @@
 __pycache__/
 .pytest_cache/
 *.py[cod]
-data/progit2/
-data/progit2-es/
-data/*.jsonl
+# Corpus descargados y otros datos regenerables. Conservamos únicamente el
+# marcador de carpeta; scripts/load_book.py volverá a descargar el libro.
+data/*
+!data/.gitkeep
 .DS_Store

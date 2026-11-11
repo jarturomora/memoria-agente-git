@@ -174,7 +174,7 @@ Punto didáctico: el conocimiento documental y la memoria del usuario son fuente
 ## 7. Guardar un recuerdo explícito
 
 ```bash
-python -m src.cli remember "Estoy aprendiendo Git y prefiero ejemplos paso a paso con PowerShell" --user alumno-01
+python -m src.cli remember "Estoy aprendiendo Git y prefiero ejemplos paso a paso con GitBash" --user alumno-01
 ```
 
 La CLI devolverá el identificador del recuerdo:
@@ -200,7 +200,7 @@ python -m src.cli memories --user alumno-01
 Debe aparecer el recuerdo guardado:
 
 ```text
-<identificador> | Estoy aprendiendo Git y prefiero ejemplos paso a paso con PowerShell
+<identificador> | Estoy aprendiendo Git y prefiero ejemplos paso a paso con GitBash
 ```
 
 Comprueba también los contadores:
@@ -226,7 +226,7 @@ Ahora la sección de memoria debe contener la preferencia:
 
 ```text
 === MEMORIA RECUPERADA ===
-- Estoy aprendiendo Git y prefiero ejemplos paso a paso con PowerShell
+- Estoy aprendiendo Git y prefiero ejemplos paso a paso con GitBash
 ```
 
 Explica que, en modo local, la aplicación enseña el contexto que recibiría el modelo, pero no genera una respuesta natural.
@@ -243,7 +243,7 @@ La respuesta debería:
 
 - Utilizar *Pro Git* como fuente factual.
 - Incluir referencias a los fragmentos recuperados.
-- Adaptar el estilo a la preferencia por PowerShell.
+- Adaptar el estilo a la preferencia por GitBash.
 - Tratar los recuerdos como preferencias, no como hechos técnicos.
 
 Este paso puede implicar coste y envía la pregunta y parte del contexto al proveedor del modelo.
